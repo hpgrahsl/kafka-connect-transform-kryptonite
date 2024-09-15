@@ -2,94 +2,127 @@ package com.github.hpgrahsl.flink.functions.kryptonite;
 
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 import org.apache.flink.table.functions.FunctionContext;
 import com.github.hpgrahsl.kryptonite.FieldMetaData;
-import com.github.hpgrahsl.kryptonite.crypto.tink.TinkAesGcm;
+import com.github.hpgrahsl.kryptonite.config.KryptoniteSettings;
 
 public class EncryptArrayUdf extends AbstractCipherFieldUdf {
-
-    private final static String CIPHER_ALGORITHM_DEFAULT = TinkAesGcm.CIPHER_ALGORITHM;
 
     private transient String defaultCipherDataKeyIdentifier;
 
     @Override
     public void open(FunctionContext context) throws Exception {
         super.open(context);
-        //TODO: load default key id via the function context
-        defaultCipherDataKeyIdentifier = "keyA";
+        defaultCipherDataKeyIdentifier = context.getJobParameter(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER,KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER_DEFAULT);
+        if(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER_DEFAULT.equals(defaultCipherDataKeyIdentifier)) {
+            defaultCipherDataKeyIdentifier = Optional.ofNullable(System.getenv(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER)).orElse(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER_DEFAULT);
+        }
     }
 
-    public String[] eval(final String[] data) {
-        return process(data);
+    public @Nullable String[] eval(@Nullable final String[] data) {
+        return process(data,defaultCipherDataKeyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
     }
 
-    public String[] eval(final Boolean[] data) {
-        return process(data);
+    // public @Nullable String[] eval(@Nullable final String[] data, String keyIdentifier) {
+    //     return process(data,keyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    public @Nullable String[] eval(@Nullable final String[] data, String keyIdentifier, String cipherAlgorithm) {
+        return process(data,keyIdentifier,cipherAlgorithm);
     }
 
-    public String[] eval(final Integer[] data) {
-        return process(data);
+    public @Nullable String[] eval(@Nullable final Boolean[] data) {
+        return process(data,defaultCipherDataKeyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
     }
 
-    public String[] eval(final Long[] data) {
-        return process(data);
+    // public @Nullable String[] eval(@Nullable final Boolean[] data, String keyIdentifier) {
+    //     return process(data,keyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    public @Nullable String[] eval(@Nullable final Boolean[] data, String keyIdentifier, String cipherAlgorithm) {
+        return process(data,keyIdentifier,cipherAlgorithm);
     }
 
-    public String[] eval(final Float[] data) {
-        return process(data);
+    public @Nullable String[] eval(@Nullable final Integer[] data) {
+        return process(data,defaultCipherDataKeyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
     }
 
-    public String[] eval(final Double[] data) {
-        return process(data);
+    // public @Nullable String[] eval(@Nullable final Integer[] data, String keyIdentifier) {
+    //     return process(data,keyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    public @Nullable String[] eval(@Nullable final Integer[] data, String keyIdentifier, String cipherAlgorithm) {
+        return process(data,keyIdentifier,cipherAlgorithm);
     }
 
-    public String[] eval(final Byte[] data) {
-        return process(data);
+    public @Nullable String[] eval(@Nullable final Long[] data) {
+        return process(data,defaultCipherDataKeyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
     }
 
-    private <T> String[] process(T[] array) {
+    // public @Nullable String[] eval(@Nullable final Long[] data, String keyIdentifier) {
+    //     return process(data,keyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    public @Nullable String[] eval(@Nullable final Long[] data, String keyIdentifier, String cipherAlgorithm) {
+        return process(data,keyIdentifier,cipherAlgorithm);
+    }
+
+    public @Nullable String[] eval(@Nullable final Float[] data) {
+        return process(data,defaultCipherDataKeyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    }
+
+    // public @Nullable String[] eval(@Nullable final Float[] data, String keyIdentifier) {
+    //     return process(data,keyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    public @Nullable String[] eval(@Nullable final Float[] data, String keyIdentifier, String cipherAlgorithm) {
+        return process(data,keyIdentifier,cipherAlgorithm);
+    }
+
+    public @Nullable String[] eval(@Nullable final Double[] data) {
+        return process(data,defaultCipherDataKeyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    }
+
+    // public @Nullable String[] eval(@Nullable final Double[] data, String keyIdentifier) {
+    //     return process(data,keyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    public @Nullable String[] eval(@Nullable final Double[] data, String keyIdentifier, String cipherAlgorithm) {
+        return process(data,keyIdentifier,cipherAlgorithm);
+    }
+
+    // NOTE: for non nullable array of var/binary
+    // -> otherwise should be wrapper type Byte[][]
+    // public @Nullable String[] eval(final byte[][] data) {
+    //     return process(data,defaultCipherDataKeyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    // public @Nullable String[] eval(final byte[][] data, String keyIdentifier) {
+    //     return process(data,keyIdentifier,KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    // }
+
+    // public @Nullable String[] eval(final byte[][] data, String keyIdentifier, String cipherAlgorithm) {
+    //     return process(data,keyIdentifier,cipherAlgorithm);
+    // }
+
+    private <T> String[] process(T[] array, String keyIdentifier, String cipherAlgorithm) {
         if(array == null ) {
             return null;
         }
-        var dataEnc = new String[array.length];
+        var arrayEnc = new String[array.length];
         for(int s = 0; s < array.length; s++) {
-            dataEnc[s] = encryptData(array[s],new FieldMetaData(
-                            CIPHER_ALGORITHM_DEFAULT,
-                            Optional.ofNullable(array[s]).map(o -> o.getClass().getName()).orElse(""),
-                            defaultCipherDataKeyIdentifier)
+            arrayEnc[s] = encryptData(
+                            array[s],
+                            new FieldMetaData(
+                                cipherAlgorithm,
+                                Optional.ofNullable(array[s]).map(o -> o.getClass().getName()).orElse(""),
+                                keyIdentifier
+                            )
                         );
         }
-        return dataEnc;
+        return arrayEnc;
     }
-
-    // private List<String> process(List<?> data) {
-    //     if(data == null) {
-    //         return null;
-    //     }
-    //     return data.stream().map( 
-    //             e -> encryptData(e,new FieldMetaData(
-    //                     CIPHER_ALGORITHM_DEFAULT,
-    //                     Optional.ofNullable(e).map(o -> o.getClass().getName()).orElse(""),
-    //                     defaultCipherDataKeyIdentifier
-    //                 )
-    //             )
-    //         ).collect(Collectors.toList());
-    // }
-
-    //explicit typeinference somehow hinders "autoboxing" of array types e.g. int[] vs Integer[]
-    // @Override
-	// public TypeInference getTypeInference(DataTypeFactory typeFactory) {
-	// 	return TypeInference.newBuilder()
-    //             // .inputTypeStrategy(InputTypeStrategies.sequence(
-    //             //         Collections.singletonList("data"),
-    //             //         Collections.singletonList(InputTypeStrategies.logical(LogicalTypeRoot.ARRAY))
-    //             //     ))
-    //             .inputTypeStrategy(
-    //                     InputTypeStrategies.sequence(
-    //                             InputTypeStrategies.ANY // SHOULD BE LIMITED to "any array" i.e. ARRAY<T>
-    //                     ))
-    //             .outputTypeStrategy(TypeStrategies.explicit(DataTypes.ARRAY(DataTypes.STRING())))
-	// 			.build();
-	// }
 
 }

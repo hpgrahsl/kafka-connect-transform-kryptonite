@@ -26,7 +26,7 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>flink-udfs-kryptonite</artifactId>
-  <version>0.1.0-EXPERIMENTAL</version>
+  <version>0.1.2-EXPERIMENTAL</version>
   <packaging>jar</packaging>
 
   <properties>

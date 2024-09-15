@@ -16,22 +16,30 @@ import org.apache.flink.table.types.inference.InputTypeStrategies;
 import org.apache.flink.table.types.inference.TypeInference;
 
 import com.github.hpgrahsl.kryptonite.FieldMetaData;
-import com.github.hpgrahsl.kryptonite.crypto.tink.TinkAesGcm;
+import com.github.hpgrahsl.kryptonite.config.KryptoniteSettings;
 
 public class EncryptMapUdf extends AbstractCipherFieldUdf {
-
-    private final static String CIPHER_ALGORITHM_DEFAULT = TinkAesGcm.CIPHER_ALGORITHM;
 
     private transient String defaultCipherDataKeyIdentifier;
 
     @Override
     public void open(FunctionContext context) throws Exception {
         super.open(context);
-        // TODO: load default key id via the function context
-        defaultCipherDataKeyIdentifier = "keyA";
+        defaultCipherDataKeyIdentifier = context.getJobParameter(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER,KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER_DEFAULT);
+        if(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER_DEFAULT.equals(defaultCipherDataKeyIdentifier)) {
+            defaultCipherDataKeyIdentifier = Optional.ofNullable(System.getenv(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER)).orElse(KryptoniteSettings.CIPHER_DATA_KEY_IDENTIFIER_DEFAULT);
+        }
     }
 
     public @Nullable Map<?, String> eval(@Nullable final Object data) {
+        return eval(data, defaultCipherDataKeyIdentifier, KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    }
+
+    public @Nullable Map<?, String> eval(@Nullable final Object data, String keyIdentifier) {
+        return eval(data, keyIdentifier, KryptoniteSettings.CIPHER_ALGORITHM_DEFAULT);
+    }
+
+    public @Nullable Map<?, String> eval(@Nullable final Object data, String keyIdentifier, String cipherAlgorithm) {
         if (data == null || !(data instanceof Map)) {
             return null;
         }
@@ -41,9 +49,9 @@ public class EncryptMapUdf extends AbstractCipherFieldUdf {
                         encryptData(
                                 e.getValue(),
                                 new FieldMetaData(
-                                        CIPHER_ALGORITHM_DEFAULT,
+                                        cipherAlgorithm,
                                         Optional.ofNullable(e.getValue()).map(o -> o.getClass().getName()).orElse(""),
-                                        defaultCipherDataKeyIdentifier))))
+                                        keyIdentifier))))
                 .collect(LinkedHashMap::new, (lhm, e) -> lhm.put(e.getKey(), e.getValue()), HashMap::putAll);
     }
 

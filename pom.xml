@@ -63,7 +63,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>17</maven.compiler.release>
+    <!-- <maven.compiler.release>17</maven.compiler.release> -->
+    <maven.compiler.release>11</maven.compiler.release>
     <assembly.plugin.version>3.4.2</assembly.plugin.version>
     <compiler.plugin.version>3.12.1</compiler.plugin.version>
     <surefire.plugin.version>3.2.3</surefire.plugin.version>
